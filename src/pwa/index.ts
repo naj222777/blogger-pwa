@@ -1,5 +1,5 @@
+import { lazy } from '@deox/utils/lazy';
 import { Workbox } from 'workbox-window';
-import { lazy } from './lazy';
 
 declare global {
   interface Window {

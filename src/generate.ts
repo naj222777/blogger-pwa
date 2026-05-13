@@ -1,10 +1,10 @@
-import fs from 'node:fs';
+import * as fs from 'node:fs/promises';
 import path from 'node:path';
 import arg from 'arg';
 import clc from 'console-log-colors';
 import merge from 'deepmerge';
-import { build } from 'esbuild';
 import { favicons } from 'favicons';
+import { build } from 'tsdown';
 import { injectManifest } from 'workbox-build';
 import metadata from '../metadata.json';
 import USER_CONFIG from '../pwa.config';
@@ -69,7 +69,7 @@ const updatedMetadata: Metadata = {
     branch: GITHUB_BRANCH,
   },
 };
-await fs.promises.writeFile(METADATA_PATH, `${JSON.stringify(updatedMetadata, null, 2)}\n`, 'utf-8');
+await fs.writeFile(METADATA_PATH, `${JSON.stringify(updatedMetadata, null, 2)}\n`, 'utf-8');
 log(clc.green(`  +  Copied metadata.json at ${METADATA_PATH}`));
 
 /* Write favicons */
@@ -86,7 +86,7 @@ const response = await favicons(UPLOAD_FAVICON_PATH, {
 });
 
 await createDirectory(APP_ICONS_DIR);
-await Promise.all(response.images.map((image) => fs.promises.writeFile(path.join(APP_ICONS_DIR, image.name), image.contents)));
+await Promise.all(response.images.map((image) => fs.writeFile(path.join(APP_ICONS_DIR, image.name), image.contents)));
 for (const { name } of response.images) {
   log(clc.magenta(`  +  ${name}`));
 }
@@ -110,8 +110,8 @@ for (const [type, directory] of [
   for (const index in files) {
     const file = files[index];
     const fileName = `screen-${type}-${Number(index) + 1}.png`;
-    const buffer = await fs.promises.readFile(path.join(directory, file));
-    await fs.promises.writeFile(path.join(APP_SCREENS_DIR, fileName), buffer);
+    const buffer = await fs.readFile(path.join(directory, file));
+    await fs.writeFile(path.join(APP_SCREENS_DIR, fileName), buffer);
     screenshots.push({
       type,
       original: file,
@@ -143,14 +143,14 @@ const commonManifestOptions: GetManifestOptions = {
   screenshotsBase: './screenshots',
 };
 const manifest = getManifest(commonManifestOptions);
-await fs.promises.writeFile(path.join(APP_MANIFEST_PATH), JSON.stringify(manifest, null, 2));
+await fs.writeFile(path.join(APP_MANIFEST_PATH), JSON.stringify(manifest, null, 2));
 log(clc.green(`  +  Copied manifest.webmanifest at ${APP_MANIFEST_PATH}`));
 // Manifest for CDN
 const cdnManifest = getManifest({
   ...commonManifestOptions,
   base: config.origin,
 });
-await fs.promises.writeFile(path.join(APP_CDN_MANIFEST_PATH), JSON.stringify(cdnManifest, null, 2));
+await fs.writeFile(path.join(APP_CDN_MANIFEST_PATH), JSON.stringify(cdnManifest, null, 2));
 log(clc.green(`  +  Copied manifest.cdn.webmanifest at ${APP_CDN_MANIFEST_PATH}`));
 
 /* Write yandex manifest json */
@@ -161,7 +161,7 @@ const yandexManifest = getYandexManifest({
   version: '1.0',
   color: config.manifest.background_color,
 });
-await fs.promises.writeFile(path.join(APP_YANDEX_PATH), JSON.stringify(yandexManifest, null, 2));
+await fs.writeFile(path.join(APP_YANDEX_PATH), JSON.stringify(yandexManifest, null, 2));
 log(clc.green(`  +  Copied yandex-browser-manifest.json at ${APP_YANDEX_PATH}`));
 
 /* Write browserconfig xml */
@@ -169,7 +169,7 @@ log(clc.blue('\nGenerating (browserconfig.xml)...'));
 const browserConfig = getBrowserConfig({
   iconsBase: '/app/icons',
 });
-await fs.promises.writeFile(path.join(APP_BROWSERCONFIG_PATH), browserConfig);
+await fs.writeFile(path.join(APP_BROWSERCONFIG_PATH), browserConfig);
 log(clc.green(`  +  Copied browserconfig.xml at ${APP_BROWSERCONFIG_PATH}`));
 
 /* Write HTML meta tags */
@@ -203,11 +203,11 @@ for (const meta of metatagsResult.all) {
   log(clc.magenta(`  +  ${name}`));
 }
 const allMetatags = getMetaTagsHTML(metatagsResult.all);
-await fs.promises.writeFile(path.join(OUT_METATAGS_PATH), `${allMetatags}\n`);
+await fs.writeFile(path.join(OUT_METATAGS_PATH), `${allMetatags}\n`);
 log(clc.green(`  +  Copied pwa-metatags.html at ${OUT_METATAGS_PATH}`));
 
 const cdnAllMetatags = getMetaTagsHTML(cdnMetatagsResult.all);
-await fs.promises.writeFile(path.join(OUT_CDN_METATAGS_PATH), `${cdnAllMetatags}\n`);
+await fs.writeFile(path.join(OUT_CDN_METATAGS_PATH), `${cdnAllMetatags}\n`);
 log(clc.green(`  +  Copied cdn-metatags.html at ${OUT_CDN_METATAGS_PATH}\n`));
 
 for (const meta of metatagsResult.noSplash) {
@@ -215,20 +215,20 @@ for (const meta of metatagsResult.noSplash) {
   log(clc.magenta(`  +  ${name}`));
 }
 const noSplashMetatags = getMetaTagsHTML(metatagsResult.noSplash);
-await fs.promises.writeFile(path.join(OUT_METATAGS_NO_SPLASH_PATH), `${noSplashMetatags}\n`);
+await fs.writeFile(path.join(OUT_METATAGS_NO_SPLASH_PATH), `${noSplashMetatags}\n`);
 log(clc.green(`  +  Copied pwa-metatags-no-splash.html at ${OUT_METATAGS_NO_SPLASH_PATH}`));
 
 const cdnNoSplashMetatags = getMetaTagsHTML(cdnMetatagsResult.noSplash);
-await fs.promises.writeFile(path.join(OUT_CDN_METATAGS_NO_SPLASH_PATH), `${cdnNoSplashMetatags}\n`);
+await fs.writeFile(path.join(OUT_CDN_METATAGS_NO_SPLASH_PATH), `${cdnNoSplashMetatags}\n`);
 log(clc.green(`  +  Copied cdn-metatags-no-splash.html at ${OUT_CDN_METATAGS_NO_SPLASH_PATH}`));
 
 const htmlHeadMetaTags = `<!--[ START: PWA Meta Tags ]-->\n  ${metatagsResult.noSplash.join(
   '\n  ',
 )}\n  <script async="" defer="" src="/app/pwa.js" type="module"></script>\n  <!--[ END: PWA Meta Tags ]-->`;
 const indexHTMLContent = getIndexHTML(config.manifest.name, htmlHeadMetaTags);
-await fs.promises.writeFile(path.join(INDEX_HTML_PATH), `${indexHTMLContent}\n`);
+await fs.writeFile(path.join(INDEX_HTML_PATH), `${indexHTMLContent}\n`);
 const offlineHTMLContent = getOfflineHTML(undefined, htmlHeadMetaTags);
-await fs.promises.writeFile(path.join(OFFLINE_HTML_PATH), `${offlineHTMLContent}\n`);
+await fs.writeFile(path.join(OFFLINE_HTML_PATH), `${offlineHTMLContent}\n`);
 
 /* Write pwa js */
 log(clc.blue('\nGenerating (pwa.js)...'));
@@ -245,14 +245,30 @@ const pwaOptions: PWAOptions = {
   },
 };
 await build({
-  entryPoints: ['./src/pwa/index.ts'],
-  target: 'es2015',
+  entry: {
+    pwa: './src/pwa/index.ts',
+  },
+  platform: 'browser',
+  target: 'es2018',
   format: 'iife',
-  bundle: true,
+  unbundle: false,
   minify: true,
-  outfile: APP_PWA_JS_PATH,
+  deps: {
+    alwaysBundle: /./,
+  },
+  outputOptions: { entryFileNames: '[name].js' },
   define: {
     __OPTIONS__: JSON.stringify(JSON.stringify(pwaOptions)),
+  },
+  write: false,
+  hooks: {
+    'build:done': async (ctx) => {
+      for (const chunk of ctx.chunks) {
+        if (chunk.type === 'chunk' && chunk.fileName === 'pwa.js') {
+          await fs.writeFile(APP_PWA_JS_PATH, chunk.code);
+        }
+      }
+    },
   },
 });
 log(clc.green(`  +  Copied pwa.js at ${APP_PWA_JS_PATH}`));
@@ -260,12 +276,28 @@ log(clc.green(`  +  Copied pwa.js at ${APP_PWA_JS_PATH}`));
 /* Write serviceworker js */
 log(clc.blue('\nGenerating (serviceworker.js)...'));
 await build({
-  entryPoints: ['./src/service-worker/index.ts'],
-  target: 'es2015',
+  entry: {
+    sw: './src/service-worker/index.ts',
+  },
+  platform: 'browser',
+  target: 'es2018',
   format: 'iife',
-  bundle: true,
+  unbundle: false,
   minify: true,
-  outfile: APP_SERVICEWORKER_JS_PATH,
+  deps: {
+    alwaysBundle: /./,
+  },
+  outputOptions: { entryFileNames: '[name].js' },
+  write: false,
+  hooks: {
+    'build:done': async (ctx) => {
+      for (const chunk of ctx.chunks) {
+        if (chunk.type === 'chunk' && chunk.fileName === 'sw.js') {
+          await fs.writeFile(APP_SERVICEWORKER_JS_PATH, chunk.code);
+        }
+      }
+    },
+  },
 });
 log(clc.green('  +  Injecting precache manifest'));
 await injectManifest({

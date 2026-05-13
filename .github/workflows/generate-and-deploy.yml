@@ -5,10 +5,6 @@ on:
   create:
   repository_dispatch:
 
-env:
-  NODE_VERSION: "22.18.0"
-  NPM_VERSION: "11.12.0"
-
 jobs:
   generate:
     runs-on: ubuntu-latest
@@ -23,40 +19,27 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-        # Install Node.js
-      - name: Setup Node.js v${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/checkout@v6
+      - name: Use pnpm
+        uses: pnpm/action-setup@v6
+      - name: Use Node 22.x
+        uses: actions/setup-node@v6
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-        # Install NPM
-      - name: Setup NPM v${{ env.NPM_VERSION }}
-        run: npm install -g npm@${{ env.NPM_VERSION }}
-
-        # Install the dependencies
-      - name: Install Dependencies
-        run: npm install
-
-        # Lint and Typecheck
+          node-version: 22.x
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install
       - name: Lint and Typecheck
-        run: npm run check && npm run check:types
-
-        # Generate bucket and output files to proceed further
+        run: pnpm run check && pnpm run check:types
       - name: Generate Bucket and Output
-        run: npm run generate -- --repository=${{ github.repository }} --branch=${{ github.head_ref || github.ref_name }}
-
-        # Deploy to cloudflare workers if default branch and required secrets (CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN) exist
+        run: pnpm run generate --repository=${{ github.repository }} --branch=${{ github.head_ref || github.ref_name }}
       - name: Deploy to Cloudflare Workers
+        # Deploy to cloudflare workers if default branch and required secrets (CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN) exist
         if: ${{ ((github.head_ref || github.ref_name) == github.event.repository.default_branch) && (env.CLOUDFLARE_ACCOUNT_ID != '') && (env.CLOUDFLARE_API_TOKEN != '') }}
         run: |
-          npm run deploy
-
-        # Commit all changed files back to the repository
+          pnpm run deploy
       - name: Push Generated Bucket and Output
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           repository: .
           commit_options: "--allow-empty"

@@ -1,28 +1,26 @@
-import fs from 'node:fs';
+import { mkdir, readdir, rm, stat } from 'node:fs/promises';
 
 export async function existsPath(path: string): Promise<boolean> {
-  return fs.promises
-    .stat(path)
+  return stat(path)
     .then(() => true)
     .catch(() => false);
 }
 
 export async function createDirectory(directoryPath: string, fresh = true): Promise<string | undefined> {
   if (fresh === true) {
-    const exists = await fs.promises
-      .stat(directoryPath)
+    const exists = await stat(directoryPath)
       .then(() => true)
       .catch(() => false);
     if (exists) {
-      await fs.promises.rm(directoryPath, { recursive: true });
+      await rm(directoryPath, { recursive: true });
     }
   }
-  return await fs.promises.mkdir(directoryPath, { recursive: true });
+  return await mkdir(directoryPath, { recursive: true });
 }
 
 export async function getDirectoryFiles(directoryPath: string): Promise<string[]> {
   if (await existsPath(directoryPath)) {
-    return fs.promises.readdir(directoryPath);
+    return readdir(directoryPath);
   }
   return [];
 }

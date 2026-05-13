@@ -1,4 +1,4 @@
-import path from 'node:path';
+import * as path from 'node:path';
 import { js2xml } from 'xml-js';
 
 function getLinkElement({ rel = '', type = '', sizes = '', href = '', media = '' }): string {
