@@ -5,7 +5,7 @@ export default defineConfig({
     id: '/',
     name: 'News and Java',
     short_name: 'NewsJava',
-    description: 'Keeping You Informed Since 2002 - News Aggregator',
+    description: 'Keeping You Informed Since 2002',
     dir: 'auto',
     lang: 'en-US',
     background_color: '#ffffff',
